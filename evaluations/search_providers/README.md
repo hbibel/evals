@@ -94,6 +94,14 @@ successfully prepared source pair. This doesn't require the SSH or container
 settings. A reuse run links to the original `snapshots/`, so keep that
 directory while other runs reference it.
 
+The runner defaults to 10 scenarios: at 10 repetitions per scenario, that's
+100 continuations per provider. Pass `--limit N` to choose a different positive
+maximum, for example `./evaluations/search_providers/run.sh --reuse-inputs --limit 5`.
+The limit applies after matching. Selection uses the lowest scenario ID hashes,
+so reruns on the same snapshots select the same scenarios without favoring the
+oldest conversations. The standalone preparation command is unlimited unless
+given `--limit`.
+
 ### Prepare Evaluation dataset
 
 To prepare an existing combined archive without downloading fresh snapshots,

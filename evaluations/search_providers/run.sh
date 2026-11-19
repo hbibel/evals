@@ -2,14 +2,22 @@
 set -euo pipefail
 umask 077
 
-case "$#:${1-}" in
-    0:) reuse=false ;;
-    1:--reuse-inputs) reuse=true ;;
-    *)
-        echo "Usage: $0 [--reuse-inputs]" >&2
-        exit 2
-        ;;
-esac
+reuse=false
+limit=25
+while (( $# )); do
+    case "$1" in
+        --reuse-inputs) reuse=true ;;
+        --limit)
+            [[ ${2-} =~ ^[1-9][0-9]*$ ]] || {
+                echo '--limit requires a positive integer' >&2
+                exit 2
+            }
+            limit=$2
+            shift ;;
+        *) echo "Usage: $0 [--reuse-inputs] [--limit N]" >&2; exit 2 ;;
+    esac
+    shift
+done
 
 evaluation=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 data="$evaluation/data"
@@ -92,7 +100,7 @@ dataset="$scratch/search_provider_scenarios.jsonl"
 TMPDIR="$scratch" uv run --project "$evaluation/../.." --group search-providers \
     python "$evaluation/prepare_dataset.py" --db "$snapshots/logs.db" \
     --librechat-collections "$snapshots/messages.gz" "$snapshots/conversations.gz" \
-    --out "$dataset"
+    --limit "$limit" --out "$dataset"
 if ! $reuse; then
     printf '%s\n' "${run_dir##*/}" > "$scratch/latest-snapshots"
     mv -f -- "$scratch/latest-snapshots" "$data/latest-snapshots"

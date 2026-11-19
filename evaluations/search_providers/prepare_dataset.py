@@ -381,7 +381,10 @@ def main() -> int:
         help="separate gzipped mongodump archives",
     )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--limit", type=int, help="maximum scenarios to write")
     args = parser.parse_args()
+    if args.limit is not None and args.limit < 1:
+        parser.error("--limit requires a positive integer")
     librechat_paths = args.librechat_collections or [args.librechat]
     try:
         with TemporaryDirectory(prefix="bifrost-") as directory:
@@ -400,6 +403,13 @@ def main() -> int:
         )
         if not records:
             raise DatasetError("no replay scenarios matched both sources")
+        if args.limit is not None and len(records) > args.limit:
+            print(
+                f"Selecting {args.limit} of {len(records)} eligible scenarios"
+            )
+            # Scenario IDs are hashes; sampling by ID avoids favoring early turns.
+            ids = set(sorted(record["id"] for record in records)[: args.limit])
+            records = [record for record in records if record["id"] in ids]
         write_dataset(args.out, records)
     except (DatasetError, InvalidBSON, KeyError, OSError, EOFError) as exc:
         print(f"error: {exc}", file=sys.stderr)
