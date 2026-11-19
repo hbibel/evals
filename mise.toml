@@ -1,0 +1,9 @@
+[tools]
+python = "3.14"
+uv = "latest"
+
+[env]
+_.path = ["{{config_root}}/.venv/bin"]
+
+[settings]
+lockfile = true
